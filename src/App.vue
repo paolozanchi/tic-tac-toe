@@ -31,8 +31,8 @@
         isPlayerTurn: true,
         winner: null,
         scores: {
-          X: 1,
-          O: -1,
+          X: 10,
+          O: -10,
           tie: 0
         },
         checkedPositions: 0
@@ -111,24 +111,28 @@
           return board[0][2]
 
         // Tie
-        let availableCells = 0
-        for(let i = 0; i < 3; i++) {
-          for(let j = 0; j < 3; j++) {
-            // If the cell is available
-            if(this.board[i][j] == null) {
-              availableCells++
-            }
-          }
-        }
-
-        if (availableCells == 0)
+        if (this.getAvailableCellsNumber(board) == 0)
           return 'tie'
 
         // No win
         return null
       },
+      getAvailableCellsNumber(board) {
+        let availableCells = 0
+        for(let i = 0; i < 3; i++) {
+          for(let j = 0; j < 3; j++) {
+            // If the cell is available
+            if(board[i][j] == null) {
+              availableCells++
+            }
+          }
+        }
+
+        return availableCells
+      },
       makeAIMove() {
         console.time("makeAIMove")
+        const MINIMAXDEPTH = 9
         let bestScore = -Infinity
         let bestMove = null
         this.checkedPositions = 0
@@ -141,7 +145,7 @@
               this.fillBoardCell(this.board, i, j, this.ai)
 
               // Calculate the score for the new position
-              let newScore = this.miniMax(this.board, false)
+              let newScore = this.miniMaxAlphaBeta(this.board, MINIMAXDEPTH, -Infinity, +Infinity, false)
 
               // Undo the AI move
               this.clearBoardCell(this.board, i, j)
@@ -164,16 +168,23 @@
           this.isPlayerTurn = true
         }
         console.timeEnd("makeAIMove")
-        console.debug("checked positions", this.checkedPositions)
+        console.debug("checked", this.checkedPositions, "positions with depth", MINIMAXDEPTH)
       },
-      miniMax(board, isMaximazing) {
-        this.checkedPositions++
+      miniMaxAlphaBeta(board, depth, alpha, beta, isMaximazing) {
         let result = this.checkWinner(board)
 
-        // Match ended, return the result
-        if (result != null) {
-          return this.scores[result]
+        if(result != null || depth === 0) {
+          if (result != null) {
+            // The match ended (win/lost/tie), return the result
+            return this.scores[result]
+          }
+          else {
+            // The match did not end, who's winning?
+            return 0
+          }
         }
+        
+        this.checkedPositions++
         
         let bestScore = isMaximazing? -Infinity : +Infinity
 
@@ -182,21 +193,26 @@
             // If the cell is available
             if (board[i][j] == null) {
               // Place the mark
-              if(isMaximazing) {
-                this.fillBoardCell(board, i, j, this.ai)
-              }
-              else {
-                this.fillBoardCell(board, i, j, this.player)
-              }
-
-              // Calculate the score for the new position
-              let newScore = this.miniMax(board, !isMaximazing)
-
-              // Undo the AI move
-              this.clearBoardCell(board, i, j)
+              this.fillBoardCell(board, i, j, isMaximazing ? this.ai : this.player)
               
+              // Calculate the score for the new position
+              let newScore = this.miniMaxAlphaBeta(board, depth - 1, alpha, beta, !isMaximazing)
+
+              // Undo the move
+              this.clearBoardCell(board, i, j)
+                
               // Check if the reached position is better than the current best found
               bestScore = isMaximazing ? Math.max(newScore, bestScore) : Math.min(newScore, bestScore)
+              
+              // Alpha-Beta pruning
+              if(isMaximazing) {
+                alpha = Math.max(alpha, bestScore)
+                if(alpha >= beta) break;
+              }
+              else {
+                beta = Math.min(beta, bestScore)
+                if(beta <= alpha) break;
+              }
             }
           }
         }
