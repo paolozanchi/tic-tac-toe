@@ -34,7 +34,8 @@
           X: 1,
           O: -1,
           tie: 0
-        }
+        },
+        checkedPositions: 0
       }
     },
     mounted() {
@@ -42,6 +43,7 @@
     },
     methods: {
       newGame() {
+        console.clear()
         // TODO: cambiare
         this.isPlayerTurn = false
         this.ai= 'X'
@@ -129,6 +131,7 @@
         console.time("makeAIMove")
         let bestScore = -Infinity
         let bestMove = null
+        this.checkedPositions = 0
 
         for(let i = 0; i < 3; i++) {
           for(let j = 0; j < 3; j++) {
@@ -161,63 +164,44 @@
           this.isPlayerTurn = true
         }
         console.timeEnd("makeAIMove")
+        console.debug("checked positions", this.checkedPositions)
       },
       miniMax(board, isMaximazing) {
+        this.checkedPositions++
         let result = this.checkWinner(board)
 
         // Match ended, return the result
         if (result != null) {
           return this.scores[result]
         }
+        
+        let bestScore = isMaximazing? -Infinity : +Infinity
 
-        if (isMaximazing) {
-          let bestScore = -Infinity
-
-          for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-              // If the cell is available
-              if (this.board[i][j] == null) {
-                // Place the AI mark
-                this.fillBoardCell(this.board, i, j, this.ai)
-
-                // Calculate the score for the new position
-                let newScore = this.miniMax(this.board, false)
-
-                // Undo the AI move
-                this.clearBoardCell(this.board, i, j)
-                
-                // Check if the position reached is better
-                bestScore = Math.max(newScore, bestScore)
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            // If the cell is available
+            if (board[i][j] == null) {
+              // Place the mark
+              if(isMaximazing) {
+                this.fillBoardCell(board, i, j, this.ai)
               }
+              else {
+                this.fillBoardCell(board, i, j, this.player)
+              }
+
+              // Calculate the score for the new position
+              let newScore = this.miniMax(board, !isMaximazing)
+
+              // Undo the AI move
+              this.clearBoardCell(board, i, j)
+              
+              // Check if the reached position is better than the current best found
+              bestScore = isMaximazing ? Math.max(newScore, bestScore) : Math.min(newScore, bestScore)
             }
           }
-
-          return bestScore
         }
-        else {
-          let bestScore = +Infinity
 
-          for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-              // If the cell is available
-              if (this.board[i][j] == null) {
-                // Place the player's mark
-                this.fillBoardCell(this.board, i, j, this.player)
-
-                // Calculate the score for the new position
-                let newScore = this.miniMax(this.board, true)
-
-                // Undo the AI move
-                this.clearBoardCell(this.board, i, j)
-                
-                // Check if the position reached is better
-                bestScore = Math.min(newScore, bestScore)
-              }
-            }
-          }
-
-          return bestScore
-        }
+        return bestScore
       }
     }
   }
