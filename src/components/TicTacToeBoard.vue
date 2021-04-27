@@ -45,13 +45,13 @@
   }
   
   .cell {
-    border: 3px solid var(--accent-color);
+    border: 3px solid var(--accent);
     height: 200px;
     width: 200px;
   }
 
   .cell:hover {
-    background-color: var(--lighter-color);
+    background-color: var(--lighter-accent);
   }
 
   .cellContent {

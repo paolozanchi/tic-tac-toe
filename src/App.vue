@@ -1,29 +1,63 @@
 <template>
-  <div id="app">
-    <button
-      v-if="gameEnded"
-      @click="newGame"
-    >
-      New Game
-    </button>
-    <p>Winner: {{ winner }}</p>
-    <TicTacToeBoard
-      :board-state="board"
-      @clickedCell="clickedCell"
-    />
-  </div>
+  <section
+    id="app"
+    class="container"
+  >
+    <main>
+      <RippleButton
+        variant="primary"
+        @click="newGame"
+      >
+        New Game
+      </RippleButton>
+
+      <TicTacToeBoard
+        :board-state="board"
+        @clickedCell="clickedCell"
+      />
+
+      <h1 v-if="winner">
+        Winner: {{ winner }}
+      </h1>
+    </main>
+    
+    <footer>
+      <span v-if="appVersion">
+        v{{ appVersion }} - 
+      </span>
+
+      Made with <span class="heart">❤️</span> by 
+      <a 
+        href="https://github.com/paolozanchi"
+        class="link"
+        target="_github"
+      >mmmmmeh1</a>
+      |
+      <a
+        href="https://linkedin.com/in/paolo-zanchi"
+        class="link"
+        target="_linkedin"
+      >
+        Paolo Zanchi
+      </a>
+    </footer>
+  </section>
 </template>
 
 <script>
   import TicTacToeBoard from '@/components/TicTacToeBoard.vue'
+  import RippleButton from '@/components/RippleButton.vue'
+  import { version } from '../package.json'
 
   export default {
     name: 'App',
     components: {
-      TicTacToeBoard
+      TicTacToeBoard,
+      RippleButton,
     },
     data() {
       return {
+        appVersion: version,
         ai: 'O',
         player: 'X',
         board: [],
@@ -225,22 +259,55 @@
 
 <style>
   :root {
-    --background-color: #121212;
-    --lighter-color: #352b41;
-    --accent-color: #d3b0fd;
+    --dark: #121212;
+    --light: #eee;
+    --lighter-accent: #352b41;
+    --accent: #d3b0fd;
+    --rippleRgb: rgb(238, 238, 238);
   }
 
   html, body {
-    background-color: var(--background-color);
+    background-color: var(--dark);
+    height: 100%;
+    margin: 0;
   }
 
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  main {
+    flex: 1 0 auto;
+  }
+
+  footer {
+    flex-shrink: 0;
+    padding: .5rem;
+    opacity: .8;
+  }
+  
+  .link {
+    color: var(--accent);
+  }
+
+  .heart {
+    color: transparent;
+    text-shadow: 0 0 0 var(--accent);
+  }
+  
   #app {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
-    color: #2c3e50;
     margin-top: 60px;
-    color: var(--accent-color);
+    color: var(--light);
   }
 </style>
