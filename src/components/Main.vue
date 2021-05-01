@@ -5,16 +5,16 @@
       @clickedCell="clickedCell"
     />
 
-    <h1 v-if="winner">
-      Winner: {{ winner }}
-    </h1>
-
     <RippleButton
       variant="primary"
       @click="newGame"
     >
       New Game
     </RippleButton>
+
+    <h1 v-if="winner">
+      Winner: {{ winner }}
+    </h1>
   </main>
 </template>
 
@@ -160,8 +160,8 @@ export default {
 
       if(this.isFirstTurn) {
         bestMove = { 
-          i: Math.floor(Math.random() * (4)) + 0, 
-          j: Math.floor(Math.random() * (4)) + 0
+          i: Math.floor(Math.random() * 3), 
+          j: Math.floor(Math.random() * 3)
         }
       }
       else {
