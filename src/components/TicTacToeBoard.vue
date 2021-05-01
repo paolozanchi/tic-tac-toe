@@ -10,12 +10,14 @@
         class="cell"
         @click="clickedCell(rowIndex, cellIndex)"
       >
-        <span
-          v-if="boardState[rowIndex - 1]"
-          class="cellContent"
-        >
-          {{ boardState[rowIndex - 1][cellIndex - 1] }}
-        </span>
+        <transition name="fade">
+          <span
+            v-if="boardState[rowIndex - 1] && boardState[rowIndex - 1][cellIndex - 1]"
+            class="playerMark"
+          >
+            {{ boardState[rowIndex - 1][cellIndex - 1] }}
+          </span>
+        </transition>
       </td>
     </tr>
   </table>
@@ -54,9 +56,17 @@
     background-color: var(--lighter-accent);
   }
 
-  .cellContent {
+  .playerMark {
     font-size: 42pt;
     font-weight: bolder;
     user-select: none;
+  }
+
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .25s;
+  }
+
+  .fade-enter, .fade-leave-to  {
+    opacity: 0;
   }
 </style>

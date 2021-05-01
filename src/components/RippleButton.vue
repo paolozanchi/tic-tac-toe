@@ -53,7 +53,7 @@ export default {
     background-color: var(--light, #eeeeee);
     margin: 0.5rem;
     padding: 0.65rem;
-    font-family: 'Metropolis', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     font-size: 1rem;
     outline: 0;
     border: 0;
