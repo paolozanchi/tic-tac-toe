@@ -61,6 +61,7 @@
         board: [],
         checkedPositions: 0,
         gameEnded: false,
+        isFirstTurn: true,
         isPlayerTurn: true,
         maximizingPlayer: null,
         minimizingPlayer: null,
@@ -93,12 +94,13 @@
           this.minimizingPlayer = this.playerHumanMark
         }
 
-        this.gameEnded = false
-        this.winner = null
         this.board = []
         for (let i = 0; i < 3; i++) {
           this.board[i] = [null, null, null]
         }
+        this.gameEnded = false
+        this.isFirstTurn = true
+        this.winner = null
 
         if (!this.isPlayerTurn) 
           this.makeAIMove()
@@ -111,6 +113,7 @@
         if (this.gameEnded || !this.isPlayerTurn) return
         
         this.makeMove(this.board, rowIndex - 1, cellIndex - 1, this.playerHumanMark)
+        if(this.isFirstTurn) this.isFirstTurn = false
         this.isPlayerTurn = false
         this.winner = this.checkWinner(this.board)
 
@@ -183,40 +186,49 @@
         let bestMove = null
         this.checkedPositions = 0
 
-        loop: for(let i = 0; i < 3; i++) {
-          for(let j = 0; j < 3; j++) {
-            // If the cell is available
-            if(this.board[i][j] == null) {
-              // Place the AI mark
-              this.makeMove(this.board, i, j, this.playerAIMark)
+        if(this.isFirstTurn) {
+          bestMove = { 
+            i: Math.floor(Math.random() * (4)) + 0, 
+            j: Math.floor(Math.random() * (4)) + 0
+          }
+        }
+        else {
+          loop: for(let i = 0; i < 3; i++) {
+            for(let j = 0; j < 3; j++) {
+              // If the cell is available
+              if(this.board[i][j] == null) {
+                // Place the AI mark
+                this.makeMove(this.board, i, j, this.playerAIMark)
 
-              // Calculate the score for the new position
-              let newScore = this.miniMaxAlphaBeta(this.board, MINIMAXDEPTH, -Infinity, +Infinity, !AIisMaximazing)
+                // Calculate the score for the new position
+                let newScore = this.miniMaxAlphaBeta(this.board, MINIMAXDEPTH, -Infinity, +Infinity, !AIisMaximazing)
 
-              // Undo the AI move
-              this.undoMove(this.board, i, j)
-              
-              if (AIisMaximazing) {
-                if (newScore > bestScore) {
-                  bestScore = newScore
-                  bestMove = { i, j }
+                // Undo the AI move
+                this.undoMove(this.board, i, j)
+                
+                if (AIisMaximazing) {
+                  if (newScore > bestScore) {
+                    bestScore = newScore
+                    bestMove = { i, j }
+                  }
+                } else {
+                  if (newScore < bestScore) {
+                    bestScore = newScore
+                    bestMove = { i, j }
+                  }
                 }
-              } else {
-                if (newScore < bestScore) {
-                  bestScore = newScore
-                  bestMove = { i, j }
-                }
-              }
 
-              if(bestScore == this.scores[this.playerAIMark]) {
-                // Found a win, don't check further
-                break loop
+                if(bestScore == this.scores[this.playerAIMark]) {
+                  // Found a win, don't check further
+                  break loop
+                }
               }
             }
           }
         }
         
         this.makeMove(this.board, bestMove.i, bestMove.j, this.playerAIMark)
+        if(this.isFirstTurn) this.isFirstTurn = false
         this.winner = this.checkWinner(this.board)
 
         if (this.winner != null) {
@@ -254,8 +266,8 @@
               let newScore = this.miniMaxAlphaBeta(board, depth - 1, alpha, beta, !isMaximazing)
 
               this.undoMove(board, i, j)
-                
-              // Check if the reached position is better than the current best found
+
+              // Check if the position reached is better than the best currently found
               bestScore = isMaximazing ? Math.max(newScore, bestScore) : Math.min(newScore, bestScore)
               
               // Alpha-Beta pruning
