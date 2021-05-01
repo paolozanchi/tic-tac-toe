@@ -58,18 +58,20 @@
     data() {
       return {
         appVersion: version,
-        ai: 'O',
-        player: 'X',
         board: [],
+        checkedPositions: 0,
         gameEnded: false,
         isPlayerTurn: true,
-        winner: null,
+        maximizingPlayer: null,
+        minimizingPlayer: null,
+        playerAIMark: null,
+        playerHumanMark: null,
         scores: {
           X: 10,
           O: -10,
           tie: 0
         },
-        checkedPositions: 0
+        winner: null,
       }
     },
     mounted() {
@@ -77,15 +79,23 @@
     },
     methods: {
       newGame() {
-        console.clear()
-        // TODO: cambiare
-        this.isPlayerTurn = false
-        this.ai= 'X'
-        this.player = 'O'
+        if (this.playerAIMark === 'X') {
+          this.isPlayerTurn = true
+          this.playerAIMark = 'O'
+          this.playerHumanMark = 'X'
+          this.maximizingPlayer = this.playerHumanMark
+          this.minimizingPlayer = this.playerAIMark
+        } else {
+          this.isPlayerTurn = false
+          this.playerAIMark = 'X'
+          this.playerHumanMark = 'O'
+          this.maximizingPlayer = this.playerAIMark
+          this.minimizingPlayer = this.playerHumanMark
+        }
 
         this.gameEnded = false
         this.winner = null
-        this.board = [];
+        this.board = []
         for (let i = 0; i < 3; i++) {
           this.board[i] = [null, null, null]
         }
@@ -93,15 +103,14 @@
         if (!this.isPlayerTurn) 
           this.makeAIMove()
       },
-      clickedCell(rowIndex, cellIndex) {
+      async clickedCell(rowIndex, cellIndex) {
         // Clicked cell is already occupied
         if (this.board[rowIndex - 1][cellIndex - 1] != null) return
 
         // The game already ended or it's not the player's turn
         if (this.gameEnded || !this.isPlayerTurn) return
         
-        this.fillBoardCell(this.board, rowIndex - 1, cellIndex - 1, this.player)
-        this.isXturn = !this.isXturn
+        this.makeMove(this.board, rowIndex - 1, cellIndex - 1, this.playerHumanMark)
         this.isPlayerTurn = false
         this.winner = this.checkWinner(this.board)
 
@@ -110,14 +119,16 @@
           return
         }
 
+        await this.sleep(500)
+
         this.makeAIMove()
       },
-      fillBoardCell(board, rowIndex, cellIndex, playerSign) {
+      makeMove(board, rowIndex, cellIndex, mark) {
         let rowArray = board[rowIndex]
-        this.$set(rowArray, cellIndex, playerSign)
+        this.$set(rowArray, cellIndex, mark)
         this.$set(board, rowIndex, rowArray)
       },
-      clearBoardCell(board, rowIndex, cellIndex) {
+      undoMove(board, rowIndex, cellIndex) {
         let rowArray = board[rowIndex]
         this.$set(rowArray, cellIndex, null)
         this.$set(board, rowIndex, rowArray)
@@ -167,32 +178,45 @@
       makeAIMove() {
         console.time("makeAIMove")
         const MINIMAXDEPTH = 9
-        let bestScore = -Infinity
+        const AIisMaximazing = (this.playerAIMark == this.maximizingPlayer)
+        let bestScore = AIisMaximazing ? -Infinity : +Infinity
         let bestMove = null
         this.checkedPositions = 0
 
-        for(let i = 0; i < 3; i++) {
+        loop: for(let i = 0; i < 3; i++) {
           for(let j = 0; j < 3; j++) {
             // If the cell is available
             if(this.board[i][j] == null) {
               // Place the AI mark
-              this.fillBoardCell(this.board, i, j, this.ai)
+              this.makeMove(this.board, i, j, this.playerAIMark)
 
               // Calculate the score for the new position
-              let newScore = this.miniMaxAlphaBeta(this.board, MINIMAXDEPTH, -Infinity, +Infinity, false)
+              let newScore = this.miniMaxAlphaBeta(this.board, MINIMAXDEPTH, -Infinity, +Infinity, !AIisMaximazing)
 
               // Undo the AI move
-              this.clearBoardCell(this.board, i, j)
+              this.undoMove(this.board, i, j)
               
-              if (newScore > bestScore) {
-                bestScore = newScore
-                bestMove = { i, j }
+              if (AIisMaximazing) {
+                if (newScore > bestScore) {
+                  bestScore = newScore
+                  bestMove = { i, j }
+                }
+              } else {
+                if (newScore < bestScore) {
+                  bestScore = newScore
+                  bestMove = { i, j }
+                }
+              }
+
+              if(bestScore == this.scores[this.playerAIMark]) {
+                // Found a win, don't check further
+                break loop
               }
             }
           }
         }
         
-        this.fillBoardCell(this.board, bestMove.i, bestMove.j, this.ai)
+        this.makeMove(this.board, bestMove.i, bestMove.j, this.playerAIMark)
         this.winner = this.checkWinner(this.board)
 
         if (this.winner != null) {
@@ -207,15 +231,13 @@
       miniMaxAlphaBeta(board, depth, alpha, beta, isMaximazing) {
         let result = this.checkWinner(board)
 
-        if(result != null || depth === 0) {
-          if (result != null) {
-            // The match ended (win/lost/tie), return the result
-            return this.scores[result]
-          }
-          else {
-            // The match did not end, who's winning?
-            return 0
-          }
+        if (result != null) {
+          // The match ended (win/lost/tie), return the result
+          return this.scores[result]
+        }
+        else if (depth === 0) {
+          // TODO: The match did not end, who's winning?
+          return 0
         }
         
         this.checkedPositions++
@@ -226,14 +248,12 @@
           for (let j = 0; j < 3; j++) {
             // If the cell is available
             if (board[i][j] == null) {
-              // Place the mark
-              this.fillBoardCell(board, i, j, isMaximazing ? this.ai : this.player)
+              this.makeMove(board, i, j, isMaximazing ? this.maximizingPlayer : this.minimizingPlayer)
               
               // Calculate the score for the new position
               let newScore = this.miniMaxAlphaBeta(board, depth - 1, alpha, beta, !isMaximazing)
 
-              // Undo the move
-              this.clearBoardCell(board, i, j)
+              this.undoMove(board, i, j)
                 
               // Check if the reached position is better than the current best found
               bestScore = isMaximazing ? Math.max(newScore, bestScore) : Math.min(newScore, bestScore)
@@ -241,17 +261,20 @@
               // Alpha-Beta pruning
               if(isMaximazing) {
                 alpha = Math.max(alpha, bestScore)
-                if(alpha >= beta) break;
+                if(alpha >= beta) break
               }
               else {
                 beta = Math.min(beta, bestScore)
-                if(beta <= alpha) break;
+                if(beta <= alpha) break
               }
             }
           }
         }
 
         return bestScore
+      },
+      sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms))
       }
     }
   }
@@ -275,6 +298,16 @@
   body {
     display: flex;
     flex-direction: column;
+  }
+  
+  #app {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", 
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    margin-top: 60px;
+    color: var(--light);
   }
 
   .container {
@@ -300,14 +333,5 @@
   .heart {
     color: transparent;
     text-shadow: 0 0 0 var(--accent);
-  }
-  
-  #app {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-align: center;
-    margin-top: 60px;
-    color: var(--light);
   }
 </style>
