@@ -15,6 +15,10 @@
     <h1 v-if="winner">
       Winner: {{ winner }}
     </h1>
+    
+    <h2>
+      Player <span class="score">{{ scoreHuman }}</span> - <span class="score">{{ scoreAI }}</span> AI
+    </h2>
   </main>
 </template>
 
@@ -44,7 +48,16 @@ export default {
         O: -10,
         tie: 0
       },
+      scoreAI: 0,
+      scoreHuman: 0,
       winner: null,
+    }
+  },
+  watch: {
+    winner() {
+      if(this.winner != null) {
+        (this.winner == this.playerAIMark) ? this.scoreAI++ : this.scoreHuman
+      }
     }
   },
   mounted() {
@@ -267,5 +280,9 @@ export default {
 <style scoped>
   main {
     flex: 1 0 auto;
+  }
+
+  .score {
+    color: var(--accent);
   }
 </style>
