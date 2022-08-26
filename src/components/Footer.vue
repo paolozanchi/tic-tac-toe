@@ -22,13 +22,11 @@
 </template>
 
 <script>
-import { version } from '../../package.json'
-
 export default {
   name: 'Footer',
   data() {
     return {
-      appVersion: version
+      appVersion: process.env.VUE_APP_VERSION
     }
   }
 }

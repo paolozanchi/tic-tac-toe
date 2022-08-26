@@ -113,13 +113,13 @@ export default {
     },
     makeMove(board, rowIndex, cellIndex, mark) {
       let rowArray = board[rowIndex]
-      this.$set(rowArray, cellIndex, mark)
-      this.$set(board, rowIndex, rowArray)
+      rowArray[cellIndex] = mark
+      board[rowIndex] = rowArray
     },
     undoMove(board, rowIndex, cellIndex) {
       let rowArray = board[rowIndex]
-      this.$set(rowArray, cellIndex, null)
-      this.$set(board, rowIndex, rowArray)
+      rowArray[cellIndex] = null
+      board[rowIndex] = rowArray
     },
     checkWinner(board) {
       // Horizontal
